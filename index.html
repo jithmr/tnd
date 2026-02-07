@@ -12,55 +12,42 @@ body {
   background: #0f172a;
   color: #e5e7eb;
 }
-
 .container {
   max-width: 1000px;
   margin: auto;
   padding: 20px;
 }
-
 h1 {
   text-align: center;
   margin-bottom: 6px;
 }
-
 #status {
   text-align: center;
   font-size: 14px;
   margin-bottom: 15px;
 }
-
 .controls {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 15px;
 }
-
 select, button {
   padding: 10px;
   border-radius: 6px;
   border: none;
   font-size: 14px;
 }
-
 button {
   background: #2563eb;
   color: white;
   cursor: pointer;
 }
-
-button:hover {
-  background: #1d4ed8;
-}
-
+button:hover { background: #1d4ed8; }
 button.sync {
   background: #16a34a;
 }
-
-button.sync:hover {
-  background: #15803d;
-}
+button.sync:hover { background: #15803d; }
 
 .toggle {
   display: flex;
@@ -83,19 +70,15 @@ button.sync:hover {
   box-shadow: 0 8px 25px rgba(0,0,0,0.4);
 }
 
-.clock button.remove {
+.clock .remove {
   position: absolute;
   top: 6px;
   right: 6px;
   background: transparent;
-  color: #ef4444;
   border: none;
+  color: #ef4444;
   font-size: 16px;
   cursor: pointer;
-}
-
-.clock button.remove:hover {
-  color: #f87171;
 }
 
 .clock h3 {
@@ -103,17 +86,14 @@ button.sync:hover {
   font-size: 14px;
   color: #93c5fd;
 }
-
 .time {
   font-size: 22px;
   font-weight: bold;
 }
-
 .offset {
   font-size: 12px;
   color: #a5b4fc;
 }
-
 .date {
   font-size: 13px;
   color: #94a3b8;
@@ -125,7 +105,7 @@ button.sync:hover {
 
 <div class="container">
   <h1>🌍 World Time Pro</h1>
-  <div id="status">Detecting location & syncing time…</div>
+  <div id="status">Syncing with internet time…</div>
 
   <div class="controls">
     <select id="regionSelect"></select>
@@ -138,7 +118,7 @@ button.sync:hover {
 
     <div class="toggle">
       <input type="checkbox" id="formatToggle">
-      <label for="formatToggle">24-Hour</label>
+      <label>24-Hour</label>
     </div>
   </div>
 
@@ -152,111 +132,92 @@ const offsetSelect = document.getElementById("offsetSelect");
 const formatToggle = document.getElementById("formatToggle");
 const statusEl = document.getElementById("status");
 
-let baseTime = new Date();
+let baseUTC = Date.now();
 let lastSync = Date.now();
 let detectedTZ = "Asia/Kolkata";
 
-// 🌐 Internet time + location detection
-async function syncTimeAndLocation(showMessage = true) {
+// 🌐 Internet time sync (UTC only)
+async function syncTime(showMsg = true) {
   try {
-    if (showMessage) {
+    if (showMsg) {
       statusEl.textContent = "⏳ Syncing with internet time…";
       statusEl.style.color = "#eab308";
     }
-
     const res = await fetch("https://worldtimeapi.org/api/ip", { cache: "no-store" });
     const data = await res.json();
 
-    baseTime = new Date(data.utc_datetime);
+    baseUTC = new Date(data.utc_datetime).getTime();
     lastSync = Date.now();
     detectedTZ = data.timezone || detectedTZ;
 
     statusEl.textContent = "🟢 Internet synced ✔️";
     statusEl.style.color = "#22c55e";
   } catch {
-    baseTime = new Date();
+    baseUTC = Date.now();
     lastSync = Date.now();
-
-    statusEl.textContent = "🔴 Offline ❌ (using system time)";
+    statusEl.textContent = "🔴 Offline ❌ (system time)";
     statusEl.style.color = "#ef4444";
   }
 }
 
 function manualSync() {
-  syncTimeAndLocation(true);
+  syncTime(true);
 }
 
-function getNow() {
-  return new Date(baseTime.getTime() + (Date.now() - lastSync));
+syncTime(false);
+setInterval(() => syncTime(false), 5 * 60 * 1000);
+
+// Always return current UTC-based time
+function getUTCNow() {
+  return new Date(baseUTC + (Date.now() - lastSync));
 }
 
-syncTimeAndLocation(false);
-setInterval(() => syncTimeAndLocation(false), 5 * 60 * 1000);
-
-// 🌍 Unique regions
+// 🌍 Regions (unique time zones)
 const regions = [
-  ["Argentina", "America/Argentina/Buenos_Aires"],
-  ["Australia – Eastern", "Australia/Sydney"],
-  ["Australia – Central", "Australia/Adelaide"],
-  ["Australia – Western", "Australia/Perth"],
-  ["Austria", "Europe/Vienna"],
-  ["Bangladesh", "Asia/Dhaka"],
-  ["Belgium", "Europe/Brussels"],
-  ["Brazil – São Paulo", "America/Sao_Paulo"],
-  ["Canada – Eastern", "America/Toronto"],
-  ["Canada – Central", "America/Winnipeg"],
-  ["Canada – Pacific", "America/Vancouver"],
-  ["China", "Asia/Shanghai"],
+  ["India", "Asia/Kolkata"],
+  ["UK", "Europe/London"],
   ["France", "Europe/Paris"],
   ["Germany", "Europe/Berlin"],
-  ["India", "Asia/Kolkata"],
-  ["Italy", "Europe/Rome"],
   ["Japan", "Asia/Tokyo"],
-  ["Mexico – Central", "America/Mexico_City"],
-  ["Mexico – Pacific", "America/Tijuana"],
-  ["Russia – Moscow", "Europe/Moscow"],
-  ["Russia – Novosibirsk", "Asia/Novosibirsk"],
-  ["Russia – Vladivostok", "Asia/Vladivostok"],
-  ["South Africa", "Africa/Johannesburg"],
-  ["South Korea", "Asia/Seoul"],
-  ["UK", "Europe/London"],
+  ["China", "Asia/Shanghai"],
+
   ["USA – Eastern", "America/New_York"],
   ["USA – Central", "America/Chicago"],
   ["USA – Mountain", "America/Denver"],
   ["USA – Pacific", "America/Los_Angeles"],
-  ["USA – Alaska", "America/Anchorage"],
-  ["USA – Hawaii", "Pacific/Honolulu"]
+
+  ["Australia – Eastern", "Australia/Sydney"],
+  ["Australia – Central", "Australia/Adelaide"],
+  ["Australia – Western", "Australia/Perth"],
+
+  ["Russia – Moscow", "Europe/Moscow"],
+  ["Russia – Vladivostok", "Asia/Vladivostok"]
 ];
 
-// Populate region dropdown
-regions
-  .sort((a,b)=>a[0].localeCompare(b[0]))
-  .forEach(r => {
-    const opt = document.createElement("option");
-    opt.value = r[1];
-    opt.textContent = r[0];
-    regionSelect.appendChild(opt);
+regions.sort((a,b)=>a[0].localeCompare(b[0]))
+  .forEach(r=>{
+    const o=document.createElement("option");
+    o.value=r[1];
+    o.textContent=r[0];
+    regionSelect.appendChild(o);
   });
 
-// UTC offsets
-for (let m = -720; m <= 840; m += 30) {
-  const sign = m >= 0 ? "+" : "−";
-  const abs = Math.abs(m);
-  const h = String(Math.floor(abs / 60)).padStart(2,"0");
-  const min = String(abs % 60).padStart(2,"0");
-
-  const opt = document.createElement("option");
-  opt.value = m;
-  opt.textContent = `UTC ${sign}${h}:${min}`;
-  offsetSelect.appendChild(opt);
+// UTC offset list
+for (let m=-720; m<=840; m+=30) {
+  const sign = m>=0?"+":"−";
+  const h = String(Math.floor(Math.abs(m)/60)).padStart(2,"0");
+  const min = String(Math.abs(m)%60).padStart(2,"0");
+  const o=document.createElement("option");
+  o.value=m;
+  o.textContent=`UTC ${sign}${h}:${min}`;
+  offsetSelect.appendChild(o);
 }
 
 // ➕ Add clock
-function addClock(tz = null, label = null) {
-  const clock = document.createElement("div");
-  clock.className = "clock";
-
-  clock.innerHTML = `
+function addClock(tz=null,label=null) {
+  const c=document.createElement("div");
+  c.className="clock";
+  c.innerHTML=`
     <button class="remove" onclick="this.parentElement.remove()">✖</button>
     <h3></h3>
     <div class="time">--:--</div>
@@ -265,74 +226,77 @@ function addClock(tz = null, label = null) {
   `;
 
   if (tz) {
-    clock.dataset.tz = tz;
-    clock.querySelector("h3").textContent = label;
+    c.dataset.tz=tz;
+    c.querySelector("h3").textContent=label;
   } else if (offsetSelect.value) {
-    clock.dataset.offset = offsetSelect.value;
-    clock.querySelector("h3").textContent = offsetSelect.selectedOptions[0].text;
-    clock.querySelector(".offset").textContent = offsetSelect.selectedOptions[0].text;
+    c.dataset.offset=offsetSelect.value;
+    c.querySelector("h3").textContent=offsetSelect.selectedOptions[0].text;
   } else {
-    clock.dataset.tz = regionSelect.value;
-    clock.querySelector("h3").textContent = regionSelect.selectedOptions[0].text;
+    c.dataset.tz=regionSelect.value;
+    c.querySelector("h3").textContent=regionSelect.selectedOptions[0].text;
   }
-
-  clocksDiv.appendChild(clock);
+  clocksDiv.appendChild(c);
 }
 
-// ⏱ Update clocks
+// ⏱ Update clocks correctly
 function updateClocks() {
-  const now = getNow();
-  const use24h = formatToggle.checked;
+  const utcNow = getUTCNow();
+  const use24 = formatToggle.checked;
 
-  document.querySelectorAll(".clock").forEach(clock => {
-    let d = now;
+  document.querySelectorAll(".clock").forEach(c=>{
+    let dateObj = utcNow;
 
-    if (clock.dataset.offset) {
-      d = new Date(now.getTime() + clock.dataset.offset * 60000);
-      clock.querySelector(".offset").textContent =
-        offsetSelect.querySelector(`option[value="${clock.dataset.offset}"]`).text;
+    if (c.dataset.offset) {
+      dateObj = new Date(utcNow.getTime() + c.dataset.offset*60000);
+      c.querySelector(".offset").textContent =
+        offsetSelect.querySelector(`option[value="${c.dataset.offset}"]`).text;
     }
 
-    if (clock.dataset.tz) {
-      const offsetFmt = new Intl.DateTimeFormat("en", {
-        timeZone: clock.dataset.tz,
+    if (c.dataset.tz) {
+      const tz = c.dataset.tz;
+
+      const timeFmt = new Intl.DateTimeFormat("en-IN", {
+        timeZone: tz,
+        hour:"2-digit", minute:"2-digit", second:"2-digit",
+        hour12: !use24
+      });
+
+      const dateFmt = new Intl.DateTimeFormat("en-IN", {
+        timeZone: tz,
+        weekday:"short", day:"numeric", month:"short", year:"numeric"
+      });
+
+      const offFmt = new Intl.DateTimeFormat("en", {
+        timeZone: tz,
         timeZoneName: "shortOffset"
       });
-      const offset = offsetFmt.formatToParts(d)
-        .find(p => p.type === "timeZoneName").value;
-      clock.querySelector(".offset").textContent = offset.replace("GMT","UTC");
+
+      c.querySelector(".time").textContent = timeFmt.format(utcNow);
+      c.querySelector(".date").textContent = dateFmt.format(utcNow);
+      c.querySelector(".offset").textContent =
+        offFmt.formatToParts(utcNow).find(p=>p.type==="timeZoneName").value.replace("GMT","UTC");
+    } else {
+      const tf = new Intl.DateTimeFormat("en-IN", {
+        hour:"2-digit", minute:"2-digit", second:"2-digit",
+        hour12: !use24
+      });
+      const df = new Intl.DateTimeFormat("en-IN", {
+        weekday:"short", day:"numeric", month:"short", year:"numeric"
+      });
+      c.querySelector(".time").textContent = tf.format(dateObj);
+      c.querySelector(".date").textContent = df.format(dateObj);
     }
-
-    const timeFmt = new Intl.DateTimeFormat("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: !use24h
-    });
-
-    const dateFmt = new Intl.DateTimeFormat("en-IN", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      year: "numeric"
-    });
-
-    clock.querySelector(".time").textContent = timeFmt.format(d);
-    clock.querySelector(".date").textContent = dateFmt.format(d);
   });
 }
 
-setInterval(updateClocks, 1000);
+setInterval(updateClocks,1000);
 updateClocks();
 
-// 🟢 Auto-add detected location clock
-setTimeout(() => {
-  const match = regions.find(r => r[1] === detectedTZ);
-  addClock(
-    detectedTZ,
-    match ? match[0] + " (Your location)" : "Your Location"
-  );
-}, 800);
+// 🟢 Auto-add detected location
+setTimeout(()=>{
+  const match=regions.find(r=>r[1]===detectedTZ);
+  addClock(detectedTZ, match?match[0]+" (Your location)":"Your Location");
+},800);
 </script>
 
 </body>
