@@ -23,6 +23,7 @@ h1 { text-align: center; margin-bottom: 6px; }
 .controls {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
   margin-bottom: 15px;
 }
@@ -32,6 +33,11 @@ select, button {
   border-radius: 6px;
   border: none;
   font-size: 14px;
+}
+
+.or-label {
+  font-weight: bold;
+  color: #facc15;
 }
 
 button {
@@ -83,7 +89,12 @@ button.sync:hover { background: #15803d; }
   <div id="status">Syncing with internet time…</div>
 
   <div class="controls">
-    <select id="regionSelect"></select>
+    <select id="regionSelect">
+      <option value="">Select country</option>
+    </select>
+
+    <span class="or-label">OR</span>
+
     <select id="offsetSelect">
       <option value="">Select UTC offset</option>
     </select>
@@ -192,6 +203,14 @@ regions.forEach(r=>{
   regionSelect.appendChild(o);
 });
 
+// 🔁 Mutual exclusivity
+regionSelect.addEventListener("change",()=>{
+  if(regionSelect.value) offsetSelect.value="";
+});
+offsetSelect.addEventListener("change",()=>{
+  if(offsetSelect.value) regionSelect.value="";
+});
+
 // UTC offset list
 for(let m=-720;m<=840;m+=30){
   const s=m>=0?"+":"−";
@@ -204,7 +223,7 @@ for(let m=-720;m<=840;m+=30){
 }
 
 // Add clock
-function addClock(tz=null,label=null){
+function addClock(){
   const c=document.createElement("div");
   c.className="clock";
   c.innerHTML=`
@@ -214,15 +233,14 @@ function addClock(tz=null,label=null){
     <div class="offset">---</div>
     <div class="date">---</div>
   `;
-  if(tz){
-    c.dataset.tz=tz;
-    c.querySelector("h3").textContent=label;
-  }else if(offsetSelect.value){
+
+  if(offsetSelect.value){
     c.dataset.offset=offsetSelect.value;
     c.querySelector("h3").textContent=offsetSelect.selectedOptions[0].text;
   }else{
-    c.dataset.tz=regionSelect.value;
-    c.querySelector("h3").textContent=regionSelect.selectedOptions[0].text;
+    c.dataset.tz=regionSelect.value || "Asia/Kolkata";
+    c.querySelector("h3").textContent=
+      regionSelect.selectedOptions[0]?.text || "India";
   }
   clocksDiv.appendChild(c);
 }
@@ -262,9 +280,11 @@ function updateClocks(){
 setInterval(updateClocks,1000);
 updateClocks();
 
-// ✅ DEFAULT CLOCK ON LOAD → INDIA
-window.addEventListener("load", () => {
-  addClock("Asia/Kolkata", "India");
+// ✅ DEFAULT: INDIA SELECTED & DISPLAYED
+window.addEventListener("load",()=>{
+  regionSelect.value = "Asia/Kolkata";   // select India in dropdown
+  offsetSelect.value = "";
+  addClock();
 });
 </script>
 </body>
