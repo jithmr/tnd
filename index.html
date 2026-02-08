@@ -172,7 +172,7 @@ function getUTCNow() {
   return new Date(baseUTC + (Date.now() - lastSync));
 }
 
-// 🌍 Regions (unique time zones)
+// 🌍 Regions
 const regions = [
   ["India", "Asia/Kolkata"],
   ["UK", "Europe/London"],
@@ -238,7 +238,7 @@ function addClock(tz=null,label=null) {
   clocksDiv.appendChild(c);
 }
 
-// ⏱ Update clocks correctly
+// ⏱ Update clocks (FIX APPLIED HERE)
 function updateClocks() {
   const utcNow = getUTCNow();
   const use24 = formatToggle.checked;
@@ -276,11 +276,14 @@ function updateClocks() {
       c.querySelector(".offset").textContent =
         offFmt.formatToParts(utcNow).find(p=>p.type==="timeZoneName").value.replace("GMT","UTC");
     } else {
+      // ✅ FIX: format offset clocks in UTC (prevents double IST)
       const tf = new Intl.DateTimeFormat("en-IN", {
+        timeZone: "UTC",
         hour:"2-digit", minute:"2-digit", second:"2-digit",
         hour12: !use24
       });
       const df = new Intl.DateTimeFormat("en-IN", {
+        timeZone: "UTC",
         weekday:"short", day:"numeric", month:"short", year:"numeric"
       });
       c.querySelector(".time").textContent = tf.format(dateObj);
