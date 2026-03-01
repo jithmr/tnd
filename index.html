@@ -121,19 +121,27 @@ const statusEl = document.getElementById("status");
 let baseUTC = Date.now();
 let lastSync = Date.now();
 
-// 🌐 Internet sync
+// 🌐 Internet sync (FIXED ONLY THIS SECTION)
 async function syncTime(showMsg=true){
   try{
     if(showMsg){
       statusEl.textContent="⏳ Syncing…";
       statusEl.style.color="#eab308";
     }
-    const r=await fetch("https://worldtimeapi.org/api/ip",{cache:"no-store"});
-    const d=await r.json();
-    baseUTC=new Date(d.utc_datetime).getTime();
-    lastSync=Date.now();
+
+    const response = await fetch("https://timeapi.io/api/Time/current/zone?timeZone=UTC",{cache:"no-store"});
+    const data = await response.json();
+
+    const utcString =
+      `${data.year}-${String(data.month).padStart(2,'0')}-${String(data.day).padStart(2,'0')}T` +
+      `${String(data.hour).padStart(2,'0')}:${String(data.minute).padStart(2,'0')}:${String(data.seconds).padStart(2,'0')}Z`;
+
+    baseUTC = new Date(utcString).getTime();
+    lastSync = Date.now();
+
     statusEl.textContent="🟢 Internet synced ✔️";
     statusEl.style.color="#22c55e";
+
   }catch{
     baseUTC=Date.now();
     lastSync=Date.now();
@@ -141,6 +149,7 @@ async function syncTime(showMsg=true){
     statusEl.style.color="#ef4444";
   }
 }
+
 function manualSync(){ syncTime(true); }
 syncTime(false);
 setInterval(()=>syncTime(false),300000);
@@ -203,7 +212,6 @@ regions.forEach(r=>{
   regionSelect.appendChild(o);
 });
 
-// 🔁 Mutual exclusivity
 regionSelect.addEventListener("change",()=>{
   if(regionSelect.value) offsetSelect.value="";
 });
@@ -211,7 +219,6 @@ offsetSelect.addEventListener("change",()=>{
   if(offsetSelect.value) regionSelect.value="";
 });
 
-// UTC offset list
 for(let m=-720;m<=840;m+=30){
   const s=m>=0?"+":"−";
   const h=String(Math.floor(Math.abs(m)/60)).padStart(2,"0");
@@ -222,7 +229,6 @@ for(let m=-720;m<=840;m+=30){
   offsetSelect.appendChild(o);
 }
 
-// Add clock
 function addClock(){
   const c=document.createElement("div");
   c.className="clock";
@@ -245,7 +251,6 @@ function addClock(){
   clocksDiv.appendChild(c);
 }
 
-// Update clocks
 function updateClocks(){
   const utcNow=getUTCNow();
   const use24=formatToggle.checked;
@@ -280,9 +285,8 @@ function updateClocks(){
 setInterval(updateClocks,1000);
 updateClocks();
 
-// ✅ DEFAULT: INDIA SELECTED & DISPLAYED
 window.addEventListener("load",()=>{
-  regionSelect.value = "Asia/Kolkata";   // select India in dropdown
+  regionSelect.value = "Asia/Kolkata";
   offsetSelect.value = "";
   addClock();
 });
